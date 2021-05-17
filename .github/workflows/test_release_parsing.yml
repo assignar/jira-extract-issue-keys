@@ -12,7 +12,7 @@ jobs:
     steps:
       - name: Parse Jira Keys from Release Summary
         id: jira_keys
-        uses: jaredhughes/jira-extract-issue-keys@add-release-support
+        uses: jaredhughes/jira-extract-issue-keys@master
         with:
           is-release: true
         env:
