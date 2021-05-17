@@ -1,0 +1,23 @@
+name: Test Release Parsing
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  test_job:
+    name: Create Jira Deployment
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Parse Jira Keys from Release Summary
+        id: jira_keys
+        uses: jaredhughes/jira-extract-issue-keys@add-release-support
+        with:
+          is-release: true
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Output Jira Keys
+        run: |
+          echo "Jira Keys: ${{ steps.jira_keys.outputs.jira-keys }}"
