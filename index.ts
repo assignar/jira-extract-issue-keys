@@ -1,7 +1,7 @@
-import core from '@actions/core';
+const core = require('@actions/core');
 const github = require('@actions/github');
 const matchAll = require("match-all");
-import Octokit from "@octokit/rest";
+const Octokit = require("@octokit/rest");
 
 async function extractJiraKeysFromCommit() {
     try {

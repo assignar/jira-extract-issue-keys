@@ -1,26 +1,23 @@
 "use strict";
-var __importDefault = (this && this.__importDefault) || function (mod) {
-    return (mod && mod.__esModule) ? mod : { "default": mod };
-};
 Object.defineProperty(exports, "__esModule", { value: true });
-const core_1 = __importDefault(require("@actions/core"));
+const core = require('@actions/core');
 const github = require('@actions/github');
 const matchAll = require("match-all");
-const rest_1 = __importDefault(require("@octokit/rest"));
+const Octokit = require("@octokit/rest");
 async function extractJiraKeysFromCommit() {
     try {
         const regex = /((([A-Z]+)|([0-9]+))+-\d+)/g;
-        const isPullRequest = core_1.default.getInput('is-pull-request') == 'true';
-        const isRelease = core_1.default.getInput('is-release') == 'true';
+        const isPullRequest = core.getInput('is-pull-request') == 'true';
+        const isRelease = core.getInput('is-release') == 'true';
         // console.log("isPullRequest: " + isPullRequest);
-        const commitMessage = core_1.default.getInput('commit-message');
+        const commitMessage = core.getInput('commit-message');
         // console.log("commitMessage: " + commitMessage);
         // console.log("core.getInput('parse-all-commits'): " + core.getInput('parse-all-commits'));
-        const parseAllCommits = core_1.default.getInput('parse-all-commits') == 'true';
+        const parseAllCommits = core.getInput('parse-all-commits') == 'true';
         // console.log("parseAllCommits: " + parseAllCommits);
         const payload = github.context.payload;
         const token = process.env['GITHUB_TOKEN'];
-        const octokit = new rest_1.default({
+        const octokit = new Octokit({
             auth: token,
         });
         if (isRelease) {
@@ -32,7 +29,7 @@ async function extractJiraKeysFromCommit() {
             const content = release.data[0].body;
             const matches = matchAll(content, regex).toArray();
             const result = matches.reduce((memo, match) => memo.find((element) => element == match) ? memo : [...memo, match], []).join(',');
-            core_1.default.setOutput("jira-keys", result);
+            core.setOutput("jira-keys", result);
             return result;
         }
         if (isPullRequest) {
@@ -60,7 +57,7 @@ async function extractJiraKeysFromCommit() {
                 });
             });
             const result = resultArr.join(',');
-            core_1.default.setOutput("jira-keys", result);
+            core.setOutput("jira-keys", result);
         }
         else {
             // console.log("not a pull request");
@@ -68,7 +65,7 @@ async function extractJiraKeysFromCommit() {
                 // console.log("commit-message input val provided...");
                 const matches = matchAll(commitMessage, regex).toArray();
                 const result = matches.join(',');
-                core_1.default.setOutput("jira-keys", result);
+                core.setOutput("jira-keys", result);
             }
             else {
                 // console.log("no commit-message input val provided...");
@@ -89,20 +86,20 @@ async function extractJiraKeysFromCommit() {
                         });
                     });
                     const result = resultArr.join(',');
-                    core_1.default.setOutput("jira-keys", result);
+                    core.setOutput("jira-keys", result);
                 }
                 else {
                     // console.log("parse-all-commits input val is false");
                     // console.log("head_commit: ", payload.head_commit);
                     const matches = matchAll(payload.head_commit.message, regex).toArray();
                     const result = matches.join(',');
-                    core_1.default.setOutput("jira-keys", result);
+                    core.setOutput("jira-keys", result);
                 }
             }
         }
     }
     catch (error) {
-        core_1.default.setFailed(error.message);
+        core.setFailed(error.message);
     }
 }
 (async function () {
