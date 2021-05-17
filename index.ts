@@ -1,12 +1,13 @@
-const core = require('@actions/core');
+import core from '@actions/core';
 const github = require('@actions/github');
 const matchAll = require("match-all");
-const Octokit = require("@octokit/rest");
+import Octokit from "@octokit/rest";
 
 async function extractJiraKeysFromCommit() {
     try {
         const regex = /((([A-Z]+)|([0-9]+))+-\d+)/g;
         const isPullRequest = core.getInput('is-pull-request') == 'true';
+        const isRelease = core.getInput('is-release') == 'true';
         // console.log("isPullRequest: " + isPullRequest);
         const commitMessage = core.getInput('commit-message');
         // console.log("commitMessage: " + commitMessage);
@@ -16,9 +17,26 @@ async function extractJiraKeysFromCommit() {
         const payload = github.context.payload;
 
         const token = process.env['GITHUB_TOKEN'];
+
         const octokit = new Octokit({
             auth: token,
         });
+
+        if (isRelease) {
+            const release = await octokit.request('GET /repos/{owner}/{repo}/releases', {
+                owner: payload.repository.owner.login,
+                repo: payload.repository.name,
+                per_page: 1,
+            })
+
+            const content: string = release.data[0].body
+            const matches: string[] = matchAll(content, regex).toArray();
+            const result = matches.reduce<string[]>((memo, match) =>
+                memo.find((element) => element == match) ? memo : [...memo, match]
+            , []).join(',');
+            core.setOutput("jira-keys", result);
+            return result;
+        }
 
         if (isPullRequest) {
             let resultArr: any = [];
@@ -46,7 +64,6 @@ async function extractJiraKeysFromCommit() {
                         resultArr.push(match);
                     }
                 });
-
             });
 
             const result = resultArr.join(',');
