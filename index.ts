@@ -3,9 +3,15 @@ const github = require('@actions/github');
 const matchAll = require("match-all");
 const Octokit = require("@octokit/rest");
 
+function matchingKeys(content: string | undefined): string[] {
+    if (!content) return [];
+    const regex = /((([A-Z]+)|([0-9]+))+-\d+)/gi;
+    // Uppercase case-insensitive matches, such as `as2-1234`
+    return matchAll(content.toUpperCase(), regex).toArray()
+}
+
 async function extractJiraKeysFromCommit() {
     try {
-        const regex = /((([A-Z]+)|([0-9]+))+-\d+)/g;
         const isPullRequest = core.getInput('is-pull-request') == 'true';
         const isRelease = core.getInput('is-release') == 'true';
         // console.log("isPullRequest: " + isPullRequest);
@@ -29,11 +35,11 @@ async function extractJiraKeysFromCommit() {
                 per_page: 1,
             })
 
-            const content: string = release.data[0].body
-            const matches: string[] = matchAll(content, regex).toArray();
+            const matches = matchingKeys(release.data[0].body);
             const result = matches.reduce<string[]>((memo, match) =>
                 memo.find((element) => element == match) ? memo : [...memo, match]
             , []).join(',');
+
             core.setOutput("jira-keys", result);
             return result;
         }
@@ -55,7 +61,7 @@ async function extractJiraKeysFromCommit() {
 
             data.forEach((item: any) => {
                 const commit = item.commit;
-                const matches: any = matchAll(commit.message, regex).toArray();
+                const matches = matchingKeys(commit.message);
                 matches.forEach((match: any) => {
                     if (resultArr.find((element: any) => element == match)) {
                         // console.log(match + " is already included in result array");
@@ -74,8 +80,7 @@ async function extractJiraKeysFromCommit() {
 
             if (commitMessage) {
                 // console.log("commit-message input val provided...");
-                const matches = matchAll(commitMessage, regex).toArray();
-                const result = matches.join(',');
+                const result = matchingKeys(commitMessage).join(',');
                 core.setOutput("jira-keys", result);
             }
             else {
@@ -87,8 +92,7 @@ async function extractJiraKeysFromCommit() {
                     let resultArr: any = [];
 
                     payload.commits.forEach((commit: any) => {
-                        const matches = matchAll(commit.message, regex).toArray();
-                        matches.forEach((match: any) => {
+                        matchingKeys(commit.message).forEach((match: any) => {
                             if (resultArr.find((element: any) => element == match)) {
                                 // console.log(match + " is already included in result array");
                             } else {
@@ -105,8 +109,8 @@ async function extractJiraKeysFromCommit() {
                 else {
                     // console.log("parse-all-commits input val is false");
                     // console.log("head_commit: ", payload.head_commit);
-                    const matches = matchAll(payload.head_commit.message, regex).toArray();
-                    const result = matches.join(',');
+                    const result = matchingKeys(payload.head_commit.message).join(',');
+
                     core.setOutput("jira-keys", result);
                 }
 
